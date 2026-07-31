@@ -1,6 +1,14 @@
 # porvenir
 
+[![ci](https://github.com/JP7599/porvenir/actions/workflows/ci.yml/badge.svg)](https://github.com/JP7599/porvenir/actions/workflows/ci.yml)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![live](https://img.shields.io/badge/live-jp7599.github.io%2Fporvenir-f0b34f.svg)](https://jp7599.github.io/porvenir/)
+
 A live map of everything humanity is betting on.
+
+**See it: [jp7599.github.io/porvenir](https://jp7599.github.io/porvenir/)**
+
+![the galaxy](docs/screenshot.png)
 
 Every open binary market on Polymarket, Kalshi and Manifold — thousands of
 questions about elections, wars, AI, rates, sport, weather, the end of the
