@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>porvenir — a map of everything humanity is betting on</title>
+<style>
+  /* porvenir brand — a star atlas. Deliberately dark-only: it is a night sky. */
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; overflow: hidden;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: #030509;
+    color: #e8ecf7;
+    --ink-2: #aab3cd; --muted: #6f7a9b;
+    --hairline: rgba(150, 175, 255, 0.14);
+    --panel: rgba(8, 12, 26, 0.72);
+    --no: #4f7df0; --mid: #cfd6e6; --yes: #f0b34f;
+  }
+  /* faint nebulae behind everything */
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(900px 600px at 18% 20%, rgba(79, 96, 240, 0.10), transparent 60%),
+      radial-gradient(1000px 700px at 82% 75%, rgba(240, 179, 79, 0.06), transparent 65%),
+      radial-gradient(700px 500px at 70% 15%, rgba(120, 200, 220, 0.05), transparent 60%);
+  }
+  #sky { position: fixed; inset: 0; width: 100%; height: 100%; cursor: grab; }
+  #sky:active { cursor: grabbing; }
+  #labels { position: fixed; inset: 0; pointer-events: none; }
+  .constellation {
+    position: absolute; top: 0; left: 0; transform: translate(-200px, -200px);
+    font-size: 11px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase;
+    color: #93a0c6; opacity: 0; transition: opacity 0.3s ease;
+    text-shadow: 0 0 12px rgba(3, 5, 9, 0.9), 0 0 4px rgba(3, 5, 9, 0.9);
+    margin-left: -60px; margin-top: -6px; pointer-events: none; white-space: nowrap;
+  }
+
+  .hud { position: fixed; z-index: 3; }
+  .brand { top: 22px; left: 26px; user-select: none; }
+  .brand h1 {
+    margin: 0; font-size: 19px; font-weight: 300; letter-spacing: 0.55em;
+    text-transform: uppercase; color: #f2f5ff;
+  }
+  .brand h1 b { font-weight: 600; color: var(--yes); }
+  .brand .rule { width: 210px; height: 1px; background: var(--hairline); margin: 10px 0 8px; }
+  .brand .tag { font-size: 12px; color: var(--muted); letter-spacing: 0.04em; }
+  .brand #stats { font-size: 11.5px; color: var(--ink-2); margin-top: 6px; }
+
+  .searchbox { top: 24px; right: 26px; text-align: right; }
+  .searchbox input {
+    width: 250px; font: inherit; font-size: 13px; color: #e8ecf7;
+    background: var(--panel); border: 1px solid var(--hairline); border-radius: 999px;
+    padding: 8px 16px; outline: none; backdrop-filter: blur(10px);
+  }
+  .searchbox input::placeholder { color: var(--muted); }
+  .searchbox input:focus { border-color: rgba(150, 175, 255, 0.4); }
+  #searchCount { font-size: 11.5px; color: var(--ink-2); margin-top: 6px; margin-right: 6px; }
+
+  .legend {
+    bottom: 24px; left: 26px; background: var(--panel); border: 1px solid var(--hairline);
+    border-radius: 14px; padding: 14px 16px; backdrop-filter: blur(10px);
+    font-size: 11.5px; color: var(--ink-2); max-width: 300px;
+  }
+  .gradbar { height: 8px; border-radius: 4px; margin: 6px 0 4px;
+    background: linear-gradient(90deg, var(--no), var(--mid) 50%, var(--yes)); }
+  .gradlbl { display: flex; justify-content: space-between; color: var(--muted); font-size: 10.5px; }
+  .legend .note { margin-top: 9px; color: var(--muted); line-height: 1.5; }
+  .chips { display: flex; gap: 6px; margin-top: 11px; flex-wrap: wrap; }
+  .chip {
+    font-size: 11px; color: var(--ink-2); border: 1px solid var(--hairline); border-radius: 999px;
+    padding: 3px 10px; cursor: pointer; user-select: none; letter-spacing: 0.03em;
+  }
+  .chip:hover { border-color: rgba(150, 175, 255, 0.45); }
+  .chip.off { opacity: 0.35; text-decoration: line-through; }
+  .chip .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; }
+
+  #tip {
+    position: fixed; z-index: 4; pointer-events: none; opacity: 0; transition: opacity 0.12s ease;
+    background: var(--panel); border: 1px solid var(--hairline); border-radius: 12px;
+    padding: 10px 13px; max-width: 330px; backdrop-filter: blur(10px);
+  }
+  #tip .t { font-size: 13px; line-height: 1.45; }
+  #tip .m { font-size: 11.5px; color: var(--ink-2); margin-top: 5px; }
+  #tip .m b { color: var(--yes); font-size: 12.5px; }
+
+  #card {
+    position: fixed; right: 26px; bottom: 24px; z-index: 5; width: 330px;
+    background: var(--panel); border: 1px solid var(--hairline); border-radius: 16px;
+    padding: 16px 18px; backdrop-filter: blur(14px);
+    transform: translateY(16px); opacity: 0; pointer-events: none; transition: all 0.18s ease;
+  }
+  #card.show { transform: none; opacity: 1; pointer-events: auto; }
+  #cardTitle { font-size: 14px; line-height: 1.45; margin-right: 20px; }
+  #cardProb { font-size: 30px; font-weight: 700; margin-top: 8px; color: var(--yes);
+    font-variant-numeric: tabular-nums; }
+  .cardTrack { height: 7px; border-radius: 4px; background: rgba(150, 175, 255, 0.12);
+    margin: 7px 0 9px; overflow: hidden; }
+  #cardFill { display: block; height: 100%; border-radius: 4px;
+    background: linear-gradient(90deg, var(--no), var(--yes)); }
+  #cardMeta { font-size: 11.5px; color: var(--ink-2); }
+  #cardLink {
+    display: inline-block; margin-top: 11px; font-size: 12.5px; color: #e8ecf7;
+    text-decoration: none; border: 1px solid var(--hairline); border-radius: 999px; padding: 6px 14px;
+  }
+  #cardLink:hover { border-color: var(--yes); color: var(--yes); }
+  #cardClose {
+    position: absolute; top: 10px; right: 12px; background: none; border: none;
+    color: var(--muted); font-size: 16px; cursor: pointer;
+  }
+  #cardClose:hover { color: #fff; }
+
+  .hint { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    font-size: 11px; color: var(--muted); letter-spacing: 0.05em; z-index: 2; }
+  @media (max-width: 900px) { .hint { display: none; } .legend { max-width: 240px; } }
+</style>
+</head>
+<body>
+<canvas id="sky"></canvas>
+<div id="labels"></div>
+
+<div class="hud brand">
+  <h1>p o r v e n <b>i</b> r</h1>
+  <div class="rule"></div>
+  <div class="tag">a map of everything humanity is betting on</div>
+  <div id="stats">loading the sky…</div>
+</div>
+
+<div class="hud searchbox">
+  <input id="search" type="search" placeholder="search the future — try 'AI', 'war', 'bitcoin'…" autocomplete="off">
+  <div id="searchCount"></div>
+</div>
+
+<div class="hud legend">
+  <div>each star is an open question · size = money at stake</div>
+  <div class="gradbar"></div>
+  <div class="gradlbl"><span>crowd says no</span><span>unsure</span><span>crowd says yes</span></div>
+  <div class="note">rings are Manifold play-money questions — attention, not dollars. Drag to pan,
+    scroll to zoom, click a star to open its market.</div>
+  <div class="chips">
+    <span class="chip" data-venue="0"><span class="dot" style="background:#8fb0ff"></span>Polymarket</span>
+    <span class="chip" data-venue="1"><span class="dot" style="background:#ffb08f"></span>Kalshi</span>
+    <span class="chip" data-venue="2"><span class="dot" style="background:#8fe8c8"></span>Manifold</span>
+    <span class="chip off" id="closing">closing ≤ 30d</span>
+  </div>
+</div>
+
+<div id="tip"></div>
+
+<div id="card">
+  <button id="cardClose">×</button>
+  <div id="cardTitle"></div>
+  <div id="cardProb"></div>
+  <div class="cardTrack"><span id="cardFill"></span></div>
+  <div id="cardMeta"></div>
+  <a id="cardLink" href="#" target="_blank" rel="noopener">Open market ↗</a>
+</div>
+
+<div class="hint">drag · scroll · hover · click — every star is a question about the future</div>
+
+<script src="data.js?v=2"></script>
+<script src="map-core.js?v=2"></script>
+<script src="galaxy.js?v=2"></script>
+</body>
+</html>

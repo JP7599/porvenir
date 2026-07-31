@@ -1,0 +1,24 @@
+[project]
+name = "porvenir"
+version = "0.1.0"
+description = "A live map of everything humanity is betting on"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.26", "scikit-learn>=1.4"]
+
+[project.scripts]
+porvenir-build = "build.pipeline:main"
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["build"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
